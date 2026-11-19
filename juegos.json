@@ -1,0 +1,347 @@
+[
+  {
+    "game_id": "SV-2016-001",
+    "title": "Stardew Valley",
+    "description": "Juego de granja, simulacion y rol.",
+    "release_date": "2016-02-26",
+    "developer_info": {
+      "studio": "ConcernedApe",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Simulacion", "RPG", "Indie"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Xbox One"],
+    "game_modes": ["Un jugador", "Multijugador en linea"],
+    "supported_languages": ["Espanol", "Ingles", "Frances"],
+    "age_rating": "E10+",
+    "critic_score": 89
+  },
+  {
+    "game_id": "HK-2017-002",
+    "title": "Hollow Knight",
+    "description": "Aventura de accion en un reino subterraneo de insectos.",
+    "release_date": "2017-02-24",
+    "developer_info": {
+      "studio": "Team Cherry",
+      "country": "Australia"
+    },
+    "genres": ["Metroidvania", "Accion", "Indie"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Xbox One"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Aleman"],
+    "age_rating": "E10+",
+    "critic_score": 90
+  },
+  {
+    "game_id": "CL-2018-003",
+    "title": "Celeste",
+    "description": "Plataformas de precision sobre escalar una montana.",
+    "release_date": "2018-01-25",
+    "developer_info": {
+      "studio": "Maddy Makes Games",
+      "country": "Canada"
+    },
+    "genres": ["Plataformas", "Indie"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Xbox One"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Japones"],
+    "age_rating": "E10+",
+    "critic_score": 92
+  },
+  {
+    "game_id": "HD-2020-004",
+    "title": "Hades",
+    "description": "Roguelike de accion para escapar del inframundo griego.",
+    "release_date": "2020-09-17",
+    "developer_info": {
+      "studio": "Supergiant Games",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Roguelike", "Accion", "Indie"],
+    "platforms": ["PC", "Nintendo Switch", "PS5", "Xbox Series X"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Frances", "Aleman"],
+    "age_rating": "T",
+    "critic_score": 93
+  },
+  {
+    "game_id": "CH-2017-005",
+    "title": "Cuphead",
+    "description": "Accion con jefes y estilo de caricatura de los anos 30.",
+    "release_date": "2017-09-29",
+    "developer_info": {
+      "studio": "Studio MDHR",
+      "country": "Canada"
+    },
+    "genres": ["Accion", "Plataformas"],
+    "platforms": ["PC", "Xbox One", "Nintendo Switch", "PS4"],
+    "game_modes": ["Un jugador", "Cooperativo local"],
+    "supported_languages": ["Espanol", "Ingles"],
+    "critic_score": 86
+  },
+  {
+    "game_id": "UT-2015-006",
+    "title": "Undertale",
+    "description": "RPG donde ningun monstruo tiene que morir.",
+    "release_date": "2015-09-15",
+    "developer_info": {
+      "studio": "Toby Fox",
+      "country": "Estados Unidos"
+    },
+    "genres": ["RPG", "Indie"],
+    "platforms": ["PC", "PS4", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Ingles", "Japones"],
+    "age_rating": "E10+",
+    "critic_score": 92
+  },
+  {
+    "game_id": "TR-2011-007",
+    "title": "Terraria",
+    "description": "Sandbox 2D de exploracion, construccion y combate.",
+    "release_date": "2011-05-16",
+    "developer_info": {
+      "studio": "Re-Logic",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Sandbox", "Aventura"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch", "Movil"],
+    "game_modes": ["Un jugador", "Multijugador en linea"],
+    "supported_languages": ["Espanol", "Ingles", "Portugues"],
+    "age_rating": "T",
+    "critic_score": 83
+  },
+  {
+    "game_id": "MC-2011-008",
+    "title": "Minecraft",
+    "description": "Mundo abierto de bloques para construir y sobrevivir.",
+    "release_date": "2011-11-18",
+    "developer_info": {
+      "studio": "Mojang Studios",
+      "country": "Suecia"
+    },
+    "genres": ["Sandbox", "Supervivencia"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch", "Movil"],
+    "game_modes": ["Un jugador", "Multijugador en linea", "Cooperativo local"],
+    "supported_languages": ["Espanol", "Ingles", "Frances", "Aleman", "Japones"],
+    "age_rating": "E10+",
+    "critic_score": 93
+  },
+  {
+    "game_id": "DC-2018-009",
+    "title": "Dead Cells",
+    "description": "",
+    "release_date": "2018-08-07",
+    "developer_info": {
+      "studio": "Motion Twin",
+      "country": "Francia"
+    },
+    "genres": ["Roguelike", "Metroidvania"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Frances"],
+    "age_rating": "T",
+    "critic_score": 89
+  },
+  {
+    "game_id": "OR-2015-010",
+    "title": "Ori and the Blind Forest",
+    "description": "Plataformas emotivo en un bosque que se muere.",
+    "release_date": "2015-03-11",
+    "developer_info": {
+      "studio": "Moon Studios",
+      "country": "Austria"
+    },
+    "genres": ["Plataformas", "Aventura"],
+    "platforms": ["PC", "Xbox One", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Aleman"],
+    "age_rating": "E",
+    "critic_score": 88
+  },
+  {
+    "game_id": "SK-2014-011",
+    "title": "Shovel Knight",
+    "description": "Plataformas retro con un caballero y su pala.",
+    "release_date": "2014-06-26",
+    "developer_info": {
+      "studio": "Yacht Club Games",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Plataformas", "Retro"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Xbox One"],
+    "game_modes": ["Un jugador", "Cooperativo local"],
+    "supported_languages": ["Ingles", "Japones"],
+    "age_rating": "E",
+    "critic_score": 85
+  },
+  {
+    "game_id": "SS-2019-012",
+    "title": "Slay the Spire",
+    "description": "Roguelike de construccion de mazos.",
+    "release_date": "2019-01-23",
+    "developer_info": {
+      "studio": "Mega Crit",
+      "country": ""
+    },
+    "genres": ["Cartas", "Roguelike"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Movil"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Coreano"],
+    "age_rating": "T",
+    "critic_score": 89
+  },
+  {
+    "game_id": "AU-2018-013",
+    "title": "Among Us",
+    "description": "Juego social de deduccion con impostores.",
+    "release_date": "2018-06-15",
+    "developer_info": {
+      "studio": "Innersloth",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Social", "Party"],
+    "platforms": ["PC", "Movil", "Nintendo Switch"],
+    "game_modes": ["Multijugador en linea"],
+    "supported_languages": ["Espanol", "Ingles", "Portugues"],
+    "age_rating": "E10+",
+    "critic_score": 85
+  },
+  {
+    "game_id": "IN-2016-014",
+    "title": "Inside",
+    "description": "Puzles atmosfericos en un mundo distopico.",
+    "release_date": "2016-06-29",
+    "developer_info": {
+      "studio": "Playdead",
+      "country": "Dinamarca"
+    },
+    "genres": ["Puzles", "Plataformas"],
+    "platforms": ["PC", "Xbox One", "PS4", "Nintendo Switch"],
+    "game_modes": [],
+    "supported_languages": ["Espanol", "Ingles"],
+    "age_rating": "M",
+    "critic_score": 93
+  },
+  {
+    "game_id": "BY-2019-015",
+    "title": "Baba Is You",
+    "description": "Puzles donde las reglas son bloques que se mueven.",
+    "release_date": "2019-03-13",
+    "developer_info": {
+      "studio": "Hempuli",
+      "country": "Finlandia"
+    },
+    "genres": ["Puzles", "Indie"],
+    "platforms": ["PC", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Finlandes"],
+    "age_rating": "E",
+    "critic_score": 87
+  },
+  {
+    "game_id": "OD-2018-016",
+    "title": "Return of the Obra Dinn",
+    "description": "Misterio de deduccion a bordo de un barco fantasma.",
+    "release_date": "2018-10-18",
+    "genres": ["Puzles", "Misterio"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Frances"],
+    "age_rating": "T",
+    "critic_score": 89
+  },
+  {
+    "game_id": "OW-2019-017",
+    "title": "Outer Wilds",
+    "description": "Exploracion espacial en un bucle de 22 minutos.",
+    "release_date": "2019-05-28",
+    "developer_info": {
+      "studio": "Mobius Digital",
+      "country": "Estados Unidos"
+    },
+    "genres": ["Exploracion", "Misterio"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Frances"],
+    "age_rating": "E10+",
+    "critic_score": 85
+  },
+  {
+    "game_id": "CO-2022-018",
+    "title": "Cult of the Lamb",
+    "description": "Roguelike con gestion de una secta de animales.",
+    "release_date": "2022-08-11",
+    "developer_info": {
+      "studio": "Massive Monster",
+      "country": "Australia"
+    },
+    "genres": ["Roguelike", "Simulacion"],
+    "platforms": ["PC", "PS5", "Xbox Series X", "Nintendo Switch"],
+    "game_modes": ["Un jugador", "Cooperativo local"],
+    "supported_languages": ["Espanol", "Ingles", "Aleman"],
+    "age_rating": "T",
+    "critic_score": null
+  },
+  {
+    "game_id": "VS-2022-019",
+    "title": "Vampire Survivors",
+    "description": "Sobrevive a hordas de monstruos durante 30 minutos.",
+    "release_date": "2022-10-20",
+    "developer_info": {
+      "studio": "poncle",
+      "country": "Reino Unido"
+    },
+    "genres": ["Roguelike", "Accion"],
+    "platforms": ["PC", "Xbox One", "Movil", "Nintendo Switch"],
+    "game_modes": ["Un jugador", "Cooperativo local"],
+    "supported_languages": ["Espanol", "Ingles", "Italiano"],
+    "age_rating": "E10+",
+    "critic_score": 86
+  },
+  {
+    "game_id": "TU-2022-020",
+    "title": "Tunic",
+    "description": "Aventura isometrica con un zorro y un manual secreto.",
+    "release_date": "2022-03-16",
+    "developer_info": {
+      "country": "Canada"
+    },
+    "genres": ["Aventura", "Accion"],
+    "platforms": ["PC", "Xbox One", "PS5", "Nintendo Switch"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles"],
+    "age_rating": "E10+",
+    "critic_score": 85
+  },
+  {
+    "game_id": "GR-2018-021",
+    "title": "Gris",
+    "description": "Plataformas artistico sobre el duelo.",
+    "release_date": "2018-12-13",
+    "developer_info": {
+      "studio": "Nomada Studio",
+      "country": "Espana"
+    },
+    "genres": ["Plataformas", "Arte"],
+    "platforms": ["PC", "Nintendo Switch", "PS4", "Movil"],
+    "game_modes": ["Un jugador"],
+    "supported_languages": ["Espanol", "Ingles", "Catalan"],
+    "age_rating": "E",
+    "critic_score": 84
+  },
+  {
+    "game_id": "SF-2020-022",
+    "title": "Spiritfarer",
+    "description": "Gestion de un barco que lleva espiritus al mas alla.",
+    "release_date": "2020-08-18",
+    "developer_info": {
+      "studio": "Thunder Lotus Games",
+      "country": ""
+    },
+    "genres": ["Simulacion", "Gestion"],
+    "platforms": ["PC", "PS4", "Xbox One", "Nintendo Switch"],
+    "game_modes": ["Un jugador", "Cooperativo local"],
+    "age_rating": "E10+",
+    "critic_score": 84
+  }
+]
