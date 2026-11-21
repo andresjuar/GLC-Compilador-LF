@@ -7,227 +7,426 @@ from json_to_toon_lex import tokens, lexer, leer_archivo
 # ---------------------------------------------------------------
 # YACC: GLC del JSON de videojuegos -> formato plano tipo TOON
 #
+# Cada regla concatena su parte de la salida en p[0], igual que en
+# el validador de HTML. El renglón TOON se va formando desde las
+# hojas (valores) hasta la raíz (archivo).
 #
-#  1. archivo     -> LBRACKET registros RBRACKET
-#  2. archivo     -> LBRACKET RBRACKET
-#  3. registros   -> registros COMMA registro
-#  4. registros   -> registro
-#  5. registro    -> LBRACE campos RBRACE
-#  6. registro    -> LBRACE RBRACE
-#  7. campos      -> campos COMMA campo
-#  8. campos      -> campo
-#  9. campo       -> K_GAME_ID COLON valor
-# 10. campo       -> K_TITLE COLON valor
-# 11. campo       -> K_DESCRIPTION COLON valor
-# 12. campo       -> K_RELEASE_DATE COLON valor
-# 13. campo       -> K_AGE_RATING COLON valor
-# 14. campo       -> K_CRITIC_SCORE COLON valor
-# 15. campo       -> K_DEVELOPER_INFO COLON developer
-# 16. campo       -> K_GENRES COLON lista
-# 17. campo       -> K_PLATFORMS COLON lista
-# 18. campo       -> K_GAME_MODES COLON lista
-# 19. campo       -> K_SUPPORTED_LANGUAGES COLON lista
-# 20. developer   -> LBRACE campos_dev RBRACE
-# 21. developer   -> LBRACE RBRACE
-# 22. developer   -> NULL
-# 23. campos_dev  -> campos_dev COMMA campo_dev
-# 24. campos_dev  -> campo_dev
-# 25. campo_dev   -> K_STUDIO COLON valor
-# 26. campo_dev   -> K_COUNTRY COLON valor
-# 27. lista       -> LBRACKET elementos RBRACKET
-# 28. lista       -> LBRACKET RBRACKET
-# 29. lista       -> NULL
-# 30. elementos   -> elementos COMMA valor
-# 31. elementos   -> valor
-# 32. valor       -> STRING
-# 33. valor       -> NUMBER
-# 34. valor       -> NULL
+# Los campos van en orden fijo. game_id es obligatorio (es la llave
+# del registro); los demás campos pueden faltar. Cuando un campo
+# falta, la regla "resto_X -> resto_Y" deja su espacio vacío.
+#
+# resto_X = los campos desde X hasta critic_score, donde cada campo
+#           presente va precedido de COMMA (como en el JSON).
 # ---------------------------------------------------------------
 
 start = 'archivo'   # símbolo inicial
 
-# Esquema de la salida, en el mismo orden que el JSON.
-# 'simple' = valor, 'objeto' = developer_info{studio, country}, 'lista' = arreglo
-ESQUEMA = (
-    ('game_id', 'simple'),
-    ('title', 'simple'),
-    ('description', 'simple'),
-    ('release_date', 'simple'),
-    ('developer_info', 'objeto'),
-    ('genres', 'lista'),
-    ('platforms', 'lista'),
-    ('game_modes', 'lista'),
-    ('supported_languages', 'lista'),
-    ('age_rating', 'simple'),
-    ('critic_score', 'simple'),
-)
-CAMPOS_DEV = ('studio', 'country')
+
+def aviso(texto):
+    """Mensaje de validación (no modifica la salida)."""
+    print(f"  Aviso [{parser.ultimo_id}]: {texto}")
 
 
-def encabezado():
-    partes = []
-    for campo, tipo in ESQUEMA:
-        if tipo == 'objeto':
-            partes.append(campo + '{' + ', '.join(CAMPOS_DEV) + '}')
-        elif tipo == 'lista':
-            partes.append(campo + '[]')
-        else:
-            partes.append(campo)
-    return ', '.join(partes)
-
+# ------------------------- Estructura -------------------------
 
 def p_archivo_1(p):
     '''archivo : LBRACKET registros RBRACKET'''
     # 1. archivo -> LBRACKET registros RBRACKET
-    p[0] = p[2]                      # lista de renglones TOON
+    p[0] = ('game_id, title, description, release_date, '
+            'developer_info{studio, country}, genres[], platforms[], '
+            'game_modes[], supported_languages[], age_rating, critic_score'
+            + '\n' + p[2] + '\n')
 
 
 def p_archivo_2(p):
     '''archivo : LBRACKET RBRACKET'''
-    # 2. archivo -> LBRACKET RBRACKET   (arreglo vacío)
-    p[0] = []
+    # 2. archivo -> LBRACKET RBRACKET   (arreglo vacío: solo encabezado)
+    p[0] = ('game_id, title, description, release_date, '
+            'developer_info{studio, country}, genres[], platforms[], '
+            'game_modes[], supported_languages[], age_rating, critic_score'
+            + '\n')
 
 
 def p_registros_1(p):
     '''registros : registros COMMA registro'''
     # 3. registros -> registros COMMA registro
-    p[0] = p[1] + [p[3]]
+    p[0] = p[1] + '\n' + p[3]
 
 
 def p_registros_2(p):
     '''registros : registro'''
     # 4. registros -> registro
-    p[0] = [p[1]]
+    p[0] = p[1]
 
 
-def p_registro_1(p):
-    '''registro : LBRACE campos RBRACE'''
-    # 5. registro -> LBRACE campos RBRACE
-    p[0] = armar_renglon(p[2], p.lineno(1))
+def p_registro(p):
+    '''registro : LBRACE game_id resto_title RBRACE'''
+    # 5. registro -> LBRACE game_id resto_title RBRACE
+    p[0] = p[2] + ', ' + p[3]
 
 
-def p_registro_2(p):
-    '''registro : LBRACE RBRACE'''
-    # 6. registro -> LBRACE RBRACE   (registro sin campos)
-    p[0] = armar_renglon([], p.lineno(1))
+# ------------------------- game_id -------------------------
+
+def p_game_id(p):
+    '''game_id : K_GAME_ID COLON valor'''
+    # 6. game_id -> K_GAME_ID COLON valor
+    parser.ultimo_id = p[3]          # solo para identificar los avisos
+    if p[3] == '':
+        aviso("'game_id' está vacío")
+    p[0] = p[3]
 
 
-def p_campos_1(p):
-    '''campos : campos COMMA campo'''
-    # 7. campos -> campos COMMA campo
-    p[0] = p[1] + [p[3]]
+# ------------------------- title -------------------------
+
+def p_title(p):
+    '''title : K_TITLE COLON valor'''
+    # 7. title -> K_TITLE COLON valor
+    if p[3] == '':
+        aviso("'title' está vacío")
+    p[0] = p[3]
 
 
-def p_campos_2(p):
-    '''campos : campo'''
-    # 8. campos -> campo
-    p[0] = [p[1]]
+def p_resto_title_1(p):
+    '''resto_title : COMMA title resto_description'''
+    # 8. resto_title -> COMMA title resto_description
+    p[0] = p[2] + ', ' + p[3]
 
 
-def p_campo_simple(p):
-    '''campo : K_GAME_ID COLON valor
-             | K_TITLE COLON valor
-             | K_DESCRIPTION COLON valor
-             | K_RELEASE_DATE COLON valor
-             | K_AGE_RATING COLON valor
-             | K_CRITIC_SCORE COLON valor'''
-    # 9-14. campo -> K_xxx COLON valor
-    # p[1] es el nombre de la llave (lo pone el lexer), p[3] su valor
-    p[0] = (p[1], p[3])
+def p_resto_title_2(p):
+    '''resto_title : resto_description'''
+    # 9. resto_title -> resto_description   (falta title)
+    aviso("falta la llave 'title'")
+    p[0] = '' + ', ' + p[1]
 
 
-def p_campo_developer(p):
-    '''campo : K_DEVELOPER_INFO COLON developer'''
-    # 15. campo -> K_DEVELOPER_INFO COLON developer
-    p[0] = (p[1], p[3])
+# ------------------------- description -------------------------
+
+def p_description(p):
+    '''description : K_DESCRIPTION COLON valor'''
+    # 10. description -> K_DESCRIPTION COLON valor
+    if p[3] == '':
+        aviso("'description' está vacío")
+    p[0] = p[3]
 
 
-def p_campo_lista(p):
-    '''campo : K_GENRES COLON lista
-             | K_PLATFORMS COLON lista
-             | K_GAME_MODES COLON lista
-             | K_SUPPORTED_LANGUAGES COLON lista'''
-    # 16-19. campo -> K_xxx COLON lista
-    p[0] = (p[1], p[3])
+def p_resto_description_1(p):
+    '''resto_description : COMMA description resto_release_date'''
+    # 11. resto_description -> COMMA description resto_release_date
+    p[0] = p[2] + ', ' + p[3]
 
 
-def p_developer_1(p):
-    '''developer : LBRACE campos_dev RBRACE'''
-    # 20. developer -> LBRACE campos_dev RBRACE
+def p_resto_description_2(p):
+    '''resto_description : resto_release_date'''
+    # 12. resto_description -> resto_release_date   (falta description)
+    aviso("falta la llave 'description'")
+    p[0] = '' + ', ' + p[1]
+
+
+# ------------------------- release_date -------------------------
+
+def p_release_date(p):
+    '''release_date : K_RELEASE_DATE COLON valor'''
+    # 13. release_date -> K_RELEASE_DATE COLON valor
+    if p[3] == '':
+        aviso("'release_date' está vacío")
+    p[0] = p[3]
+
+
+def p_resto_release_date_1(p):
+    '''resto_release_date : COMMA release_date resto_developer_info'''
+    # 14. resto_release_date -> COMMA release_date resto_developer_info
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_release_date_2(p):
+    '''resto_release_date : resto_developer_info'''
+    # 15. resto_release_date -> resto_developer_info   (falta release_date)
+    aviso("falta la llave 'release_date'")
+    p[0] = '' + ', ' + p[1]
+
+
+# ------------------------- developer_info -------------------------
+
+def p_developer_info(p):
+    '''developer_info : K_DEVELOPER_INFO COLON objeto_dev'''
+    # 16. developer_info -> K_DEVELOPER_INFO COLON objeto_dev
+    p[0] = p[3]
+
+
+def p_resto_developer_info_1(p):
+    '''resto_developer_info : COMMA developer_info resto_genres'''
+    # 17. resto_developer_info -> COMMA developer_info resto_genres
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_developer_info_2(p):
+    '''resto_developer_info : resto_genres'''
+    # 18. resto_developer_info -> resto_genres   (falta developer_info)
+    aviso("falta la llave 'developer_info'")
+    p[0] = '{, }' + ', ' + p[1]
+
+
+# ------------------------- genres -------------------------
+
+def p_genres(p):
+    '''genres : K_GENRES COLON lista'''
+    # 19. genres -> K_GENRES COLON lista
+    if p[3] == '[]':
+        aviso("'genres' es una lista vacía")
+    p[0] = p[3]
+
+
+def p_resto_genres_1(p):
+    '''resto_genres : COMMA genres resto_platforms'''
+    # 20. resto_genres -> COMMA genres resto_platforms
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_genres_2(p):
+    '''resto_genres : resto_platforms'''
+    # 21. resto_genres -> resto_platforms   (falta genres)
+    aviso("falta la llave 'genres'")
+    p[0] = '[]' + ', ' + p[1]
+
+
+# ------------------------- platforms -------------------------
+
+def p_platforms(p):
+    '''platforms : K_PLATFORMS COLON lista'''
+    # 22. platforms -> K_PLATFORMS COLON lista
+    if p[3] == '[]':
+        aviso("'platforms' es una lista vacía")
+    p[0] = p[3]
+
+
+def p_resto_platforms_1(p):
+    '''resto_platforms : COMMA platforms resto_game_modes'''
+    # 23. resto_platforms -> COMMA platforms resto_game_modes
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_platforms_2(p):
+    '''resto_platforms : resto_game_modes'''
+    # 24. resto_platforms -> resto_game_modes   (falta platforms)
+    aviso("falta la llave 'platforms'")
+    p[0] = '[]' + ', ' + p[1]
+
+
+# ------------------------- game_modes -------------------------
+
+def p_game_modes(p):
+    '''game_modes : K_GAME_MODES COLON lista'''
+    # 25. game_modes -> K_GAME_MODES COLON lista
+    if p[3] == '[]':
+        aviso("'game_modes' es una lista vacía")
+    p[0] = p[3]
+
+
+def p_resto_game_modes_1(p):
+    '''resto_game_modes : COMMA game_modes resto_supported_languages'''
+    # 26. resto_game_modes -> COMMA game_modes resto_supported_languages
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_game_modes_2(p):
+    '''resto_game_modes : resto_supported_languages'''
+    # 27. resto_game_modes -> resto_supported_languages   (falta game_modes)
+    aviso("falta la llave 'game_modes'")
+    p[0] = '[]' + ', ' + p[1]
+
+
+# ------------------------- supported_languages -------------------------
+
+def p_supported_languages(p):
+    '''supported_languages : K_SUPPORTED_LANGUAGES COLON lista'''
+    # 28. supported_languages -> K_SUPPORTED_LANGUAGES COLON lista
+    if p[3] == '[]':
+        aviso("'supported_languages' es una lista vacía")
+    p[0] = p[3]
+
+
+def p_resto_supported_languages_1(p):
+    '''resto_supported_languages : COMMA supported_languages resto_age_rating'''
+    # 29. resto_supported_languages -> COMMA supported_languages resto_age_rating
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_supported_languages_2(p):
+    '''resto_supported_languages : resto_age_rating'''
+    # 30. resto_supported_languages -> resto_age_rating   (falta supported_languages)
+    aviso("falta la llave 'supported_languages'")
+    p[0] = '[]' + ', ' + p[1]
+
+
+# ------------------------- age_rating -------------------------
+
+def p_age_rating(p):
+    '''age_rating : K_AGE_RATING COLON valor'''
+    # 31. age_rating -> K_AGE_RATING COLON valor
+    if p[3] == '':
+        aviso("'age_rating' está vacío")
+    p[0] = p[3]
+
+
+def p_resto_age_rating_1(p):
+    '''resto_age_rating : COMMA age_rating resto_critic_score'''
+    # 32. resto_age_rating -> COMMA age_rating resto_critic_score
+    p[0] = p[2] + ', ' + p[3]
+
+
+def p_resto_age_rating_2(p):
+    '''resto_age_rating : resto_critic_score'''
+    # 33. resto_age_rating -> resto_critic_score   (falta age_rating)
+    aviso("falta la llave 'age_rating'")
+    p[0] = '' + ', ' + p[1]
+
+
+# ------------------------- critic_score -------------------------
+
+def p_critic_score(p):
+    '''critic_score : K_CRITIC_SCORE COLON valor'''
+    # 34. critic_score -> K_CRITIC_SCORE COLON valor
+    if p[3] == '':
+        aviso("'critic_score' está vacío")
+    p[0] = p[3]
+
+
+def p_resto_critic_score_1(p):
+    '''resto_critic_score : COMMA critic_score'''
+    # 35. resto_critic_score -> COMMA critic_score
     p[0] = p[2]
 
 
-def p_developer_2(p):
-    '''developer : LBRACE RBRACE'''
-    # 21. developer -> LBRACE RBRACE   (objeto anidado vacío)
-    p[0] = []
+def p_resto_critic_score_2(p):
+    '''resto_critic_score : '''
+    # 36. resto_critic_score -> ε   (falta critic_score)
+    aviso("falta la llave 'critic_score'")
+    p[0] = ''
 
 
-def p_developer_3(p):
-    '''developer : NULL'''
-    # 22. developer -> NULL
-    p[0] = []
+# ------------------- objeto anidado developer_info -------------------
+
+def p_objeto_dev_1(p):
+    '''objeto_dev : LBRACE desde_studio RBRACE'''
+    # 37. objeto_dev -> LBRACE desde_studio RBRACE
+    p[0] = '{' + p[2] + '}'
 
 
-def p_campos_dev_1(p):
-    '''campos_dev : campos_dev COMMA campo_dev'''
-    # 23. campos_dev -> campos_dev COMMA campo_dev
-    p[0] = p[1] + [p[3]]
+def p_objeto_dev_2(p):
+    '''objeto_dev : NULL'''
+    # 38. objeto_dev -> NULL
+    aviso("'developer_info' es null")
+    p[0] = '{, }'
 
 
-def p_campos_dev_2(p):
-    '''campos_dev : campo_dev'''
-    # 24. campos_dev -> campo_dev
-    p[0] = [p[1]]
+def p_desde_studio_1(p):
+    '''desde_studio : studio resto_country'''
+    # 39. desde_studio -> studio resto_country
+    p[0] = p[1] + ', ' + p[2]
 
 
-def p_campo_dev(p):
-    '''campo_dev : K_STUDIO COLON valor
-                 | K_COUNTRY COLON valor'''
-    # 25-26. campo_dev -> K_STUDIO COLON valor | K_COUNTRY COLON valor
-    p[0] = (p[1], p[3])
+def p_desde_studio_2(p):
+    '''desde_studio : desde_country'''
+    # 40. desde_studio -> desde_country   (falta studio)
+    aviso("falta la llave 'developer_info.studio'")
+    p[0] = '' + ', ' + p[1]
 
+
+def p_desde_country_1(p):
+    '''desde_country : country'''
+    # 41. desde_country -> country
+    p[0] = p[1]
+
+
+def p_desde_country_2(p):
+    '''desde_country : '''
+    # 42. desde_country -> ε   (falta country)
+    aviso("falta la llave 'developer_info.country'")
+    p[0] = ''
+
+
+def p_resto_country_1(p):
+    '''resto_country : COMMA country'''
+    # 43. resto_country -> COMMA country
+    p[0] = p[2]
+
+
+def p_resto_country_2(p):
+    '''resto_country : '''
+    # 44. resto_country -> ε   (falta country)
+    aviso("falta la llave 'developer_info.country'")
+    p[0] = ''
+
+
+def p_studio(p):
+    '''studio : K_STUDIO COLON valor'''
+    # 45. studio -> K_STUDIO COLON valor
+    if p[3] == '':
+        aviso("'developer_info.studio' está vacío")
+    p[0] = p[3]
+
+
+def p_country(p):
+    '''country : K_COUNTRY COLON valor'''
+    # 46. country -> K_COUNTRY COLON valor
+    if p[3] == '':
+        aviso("'developer_info.country' está vacío")
+    p[0] = p[3]
+
+
+# ------------------------- listas -------------------------
 
 def p_lista_1(p):
     '''lista : LBRACKET elementos RBRACKET'''
-    # 27. lista -> LBRACKET elementos RBRACKET
-    p[0] = p[2]
+    # 47. lista -> LBRACKET elementos RBRACKET
+    p[0] = '[' + p[2] + ']'
 
 
 def p_lista_2(p):
     '''lista : LBRACKET RBRACKET'''
-    # 28. lista -> LBRACKET RBRACKET   (arreglo vacío)
-    p[0] = []
+    # 48. lista -> LBRACKET RBRACKET   (arreglo vacío)
+    p[0] = '[]'
 
 
 def p_lista_3(p):
     '''lista : NULL'''
-    # 29. lista -> NULL
-    p[0] = []
+    # 49. lista -> NULL
+    p[0] = '[]'
 
 
 def p_elementos_1(p):
     '''elementos : elementos COMMA valor'''
-    # 30. elementos -> elementos COMMA valor
-    p[0] = p[1] + [p[3]]
+    # 50. elementos -> elementos COMMA valor
+    p[0] = p[1] + ', ' + p[3]
 
 
 def p_elementos_2(p):
     '''elementos : valor'''
-    # 31. elementos -> valor
-    p[0] = [p[1]]
-
-
-def p_valor_1(p):
-    '''valor : STRING
-             | NUMBER'''
-    # 32-33. valor -> STRING | NUMBER
+    # 51. elementos -> valor
     p[0] = p[1]
 
 
+# ------------------------- valores -------------------------
+
+def p_valor_1(p):
+    '''valor : STRING'''
+    # 52. valor -> STRING
+    # Si el texto trae coma (el delimitador de TOON) se pone entre comillas
+    if ',' in p[1]:
+        p[0] = '"' + p[1] + '"'
+    else:
+        p[0] = p[1]
+
+
 def p_valor_2(p):
+    '''valor : NUMBER'''
+    # 53. valor -> NUMBER
+    p[0] = p[1]
+
+
+def p_valor_3(p):
     '''valor : NULL'''
-    # 34. valor -> NULL   (se trata como campo vacío)
+    # 54. valor -> NULL   (se deja el espacio vacío)
     p[0] = ''
 
 
@@ -239,103 +438,28 @@ def p_error(p):
         print("  Error de sintaxis: fin de archivo inesperado")
 
 
-# ---------------------------------------------------------------
-# Funciones auxiliares (formato de salida y validación)
-# ---------------------------------------------------------------
-
-def formato_valor(v):
-    """Si el valor contiene el delimitador (coma) se pone entre comillas,
-    como hace TOON, para que la salida no sea ambigua."""
-    if ',' in v:
-        return '"' + v + '"'
-    return v
-
-
-def buscar(pares, llave):
-    """Busca una llave en la lista de pares (llave, valor).
-    Devuelve None si la llave no existe."""
-    for k, v in pares:
-        if k == llave:
-            return v
-    return None
-
-
-def armar_renglon(pares, linea):
-    """Convierte un registro en un renglón TOON. Si una llave no existe o
-    está vacía, se deja su espacio vacío en la salida."""
-    parser.num_registro += 1
-    n = parser.num_registro
-    donde = f"Registro {n} (línea {linea})"
-    columnas = []
-
-    for campo, tipo in ESQUEMA:
-        v = buscar(pares, campo)
-        if v is None:
-            parser.avisos.append(f"{donde}: falta la llave '{campo}'")
-
-        if tipo == 'simple':
-            if v is None:
-                v = ''
-            elif v == '':
-                parser.avisos.append(f"{donde}: '{campo}' está vacío")
-            columnas.append(formato_valor(v))
-
-        elif tipo == 'lista':
-            if v is None:
-                v = []
-            elif v == []:
-                parser.avisos.append(f"{donde}: '{campo}' es una lista vacía")
-            columnas.append('[' + ', '.join(formato_valor(e) for e in v) + ']')
-
-        else:   # objeto developer_info
-            if v is None:
-                v = []
-            sub = []
-            for sc in CAMPOS_DEV:
-                sv = buscar(v, sc)
-                if sv is None:
-                    if v:
-                        parser.avisos.append(f"{donde}: falta la llave '{campo}.{sc}'")
-                    sv = ''
-                elif sv == '':
-                    parser.avisos.append(f"{donde}: '{campo}.{sc}' está vacío")
-                sub.append(formato_valor(sv))
-            columnas.append('{' + ', '.join(sub) + '}')
-
-    return ', '.join(columnas)
-
-
 parser = yacc.yacc()
 parser.errores = 0
-parser.num_registro = 0
-parser.avisos = []
+parser.ultimo_id = '?'
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         texto = leer_archivo(sys.argv[1])
         salida = sys.argv[2] if len(sys.argv) > 2 else 'salida_toon.txt'
 
-        renglones = parser.parse(texto, lexer=lexer)
+        print("Validación de estructura:")
+        resultado = parser.parse(texto, lexer=lexer)
 
-        if lexer.errores or parser.errores or renglones is None:
+        if lexer.errores or parser.errores or resultado is None:
             print(f"\nEl archivo NO es válido: {lexer.errores} error(es) léxico(s), "
                   f"{parser.errores} error(es) de sintaxis. No se generó la salida.")
         else:
-            print("Validación de estructura:")
-            for aviso in parser.avisos:
-                print("  " + aviso)
-            if not parser.avisos:
-                print("  Todos los registros están completos.")
-
             with open(salida, 'w', encoding='utf-8') as f:
-                f.write(encabezado() + '\n')
-                for r in renglones:
-                    f.write(r + '\n')
+                f.write(resultado)
 
-            print(f"\n{encabezado()}")
-            for r in renglones:
-                print(r)
-            print(f"\nRegistros leídos: {parser.num_registro} | "
-                  f"Renglones TOON escritos: {len(renglones)} -> {salida}")
+            print()
+            print(resultado)
+            # renglones TOON = renglones del resultado menos el encabezado
+            print(f"Registros TOON escritos: {resultado.count(chr(10)) - 1} -> {salida}")
     else:
         print("Falta archivo de ENTRADA")
