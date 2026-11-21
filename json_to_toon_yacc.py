@@ -5,27 +5,62 @@ import ply.yacc as yacc
 from json_to_toon_lex import tokens, lexer, leer_archivo
 
 # ---------------------------------------------------------------
-# YACC: GLC del JSON de videojuegos -> formato plano tipo TOON
+# YACC: GLC del JSON de videojuegos -> formato TOON (tabla)
+#
+# Salida:
+#   juegos[N]{game_id,title,...,developer_info.studio,developer_info.country,...}:
+#     SV-2016-001,Stardew Valley,...,ConcernedApe,Estados Unidos,...
+#
+# Reglas de TOON que se siguen:
+#  - Encabezado  nombre[N]{campos}:  y un renglón por registro con 2 espacios.
+#  - Los valores se separan con coma, sin espacios.
+#  - Una tabla TOON solo admite valores simples, por eso el objeto
+#    anidado se aplana como developer_info.studio, developer_info.country
+#    (así lo hace TOON con sus llaves con punto) y cada lista se escribe
+#    como un solo valor con sus elementos separados por ';'.
+#  - Campo que falta o null  -> null       Cadena vacía -> ""
+#  - Se ponen comillas cuando el texto podría confundirse (ver a_toon).
 # ---------------------------------------------------------------
 
 start = 'archivo'   # símbolo inicial
 
+
+def a_toon(texto):
+    """Escribe un texto como valor TOON: lo deja igual o lo pone entre
+    comillas si TOON lo leería mal (vacío, con coma o dos puntos, que
+    parezca número, true/false/null, que empiece con '-' o con espacios)."""
+    sin_signo = texto[1:] if texto.startswith('-') else texto
+    parece_numero = sin_signo.replace('.', '', 1).isdigit()
+    if (texto == ''
+            or ',' in texto or ':' in texto
+            or texto in ('true', 'false', 'null')
+            or parece_numero
+            or texto.startswith('-')
+            or texto != texto.strip()):
+        return '"' + texto + '"'
+    return texto
+
+
+# ------------------------- Estructura -------------------------
+
 def p_archivo_1(p):
     '''archivo : LBRACKET registros RBRACKET'''
     # 1. archivo -> LBRACKET registros RBRACKET
-    p[0] = ('{' +  'game_id, title, description, release_date, '
-            'developer_info{studio, country}, genres[], platforms[], '
-            'game_modes[], supported_languages[], age_rating, critic_score'
-             + '}:' + '\n' + p[2] + '\n')
+    # N = número de renglones que trae p[2] (uno por registro)
+    p[0] = ('juegos[' + str(p[2].count('\n') + 1) + ']'
+            + '{game_id,title,description,release_date,'
+            + 'developer_info.studio,developer_info.country,'
+            + 'genres,platforms,game_modes,supported_languages,'
+            + 'age_rating,critic_score}:'
+            + '\n' + p[2] + '\n')
 
-#para archivos vacíos [] este caso nunca entraría en la tarea porque es mínimo 20 registros, pero para completar las reglas
+
+# Esta regla es para archivos vacíos [], este caso nunca entraría en la
+# tarea porque es mínimo 20 registros, pero para completar las reglas
 def p_archivo_2(p):
     '''archivo : LBRACKET RBRACKET'''
-    # 2. archivo -> LBRACKET RBRACKET   (arreglo vacío: solo encabezado)
-    p[0] =  ('{' + 'game_id, title, description, release_date, '
-            'developer_info{studio, country}, genres[], platforms[], '
-            'game_modes[], supported_languages[], age_rating, critic_score'
-           + '}' + '\n') 
+    # 2. archivo -> LBRACKET RBRACKET   (en TOON un arreglo vacío es  nombre[0]:)
+    p[0] = 'juegos[0]:' + '\n'
 
 
 def p_registros_1(p):
@@ -43,7 +78,7 @@ def p_registros_2(p):
 def p_registro(p):
     '''registro : LBRACE game_id resto_title RBRACE'''
     # 5. registro -> LBRACE game_id resto_title RBRACE
-    p[0] = '  ' + p[2] + ', ' + p[3]
+    p[0] = '  ' + p[2] + ',' + p[3]
 
 
 # ------------------------- game_id -------------------------
@@ -65,13 +100,13 @@ def p_title(p):
 def p_resto_title_1(p):
     '''resto_title : COMMA title resto_description'''
     # 8. resto_title -> COMMA title resto_description
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_title_2(p):
     '''resto_title : resto_description'''
     # 9. resto_title -> resto_description   (falta title)
-    p[0] = '' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- description -------------------------
@@ -85,13 +120,13 @@ def p_description(p):
 def p_resto_description_1(p):
     '''resto_description : COMMA description resto_release_date'''
     # 11. resto_description -> COMMA description resto_release_date
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_description_2(p):
     '''resto_description : resto_release_date'''
     # 12. resto_description -> resto_release_date   (falta description)
-    p[0] = '' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- release_date -------------------------
@@ -105,13 +140,13 @@ def p_release_date(p):
 def p_resto_release_date_1(p):
     '''resto_release_date : COMMA release_date resto_developer_info'''
     # 14. resto_release_date -> COMMA release_date resto_developer_info
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_release_date_2(p):
     '''resto_release_date : resto_developer_info'''
     # 15. resto_release_date -> resto_developer_info   (falta release_date)
-    p[0] = '' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- developer_info -------------------------
@@ -125,13 +160,14 @@ def p_developer_info(p):
 def p_resto_developer_info_1(p):
     '''resto_developer_info : COMMA developer_info resto_genres'''
     # 17. resto_developer_info -> COMMA developer_info resto_genres
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_developer_info_2(p):
     '''resto_developer_info : resto_genres'''
-    # 18. resto_developer_info -> resto_genres   (falta developer_info)
-    p[0] = '{, }' + ', ' + p[1]
+    # 18. resto_developer_info -> resto_genres   (falta developer_info:
+    #     quedan vacías sus dos columnas, studio y country)
+    p[0] = 'null,null' + ',' + p[1]
 
 
 # ------------------------- genres -------------------------
@@ -145,13 +181,13 @@ def p_genres(p):
 def p_resto_genres_1(p):
     '''resto_genres : COMMA genres resto_platforms'''
     # 20. resto_genres -> COMMA genres resto_platforms
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_genres_2(p):
     '''resto_genres : resto_platforms'''
     # 21. resto_genres -> resto_platforms   (falta genres)
-    p[0] = '[]' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- platforms -------------------------
@@ -165,13 +201,13 @@ def p_platforms(p):
 def p_resto_platforms_1(p):
     '''resto_platforms : COMMA platforms resto_game_modes'''
     # 23. resto_platforms -> COMMA platforms resto_game_modes
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_platforms_2(p):
     '''resto_platforms : resto_game_modes'''
     # 24. resto_platforms -> resto_game_modes   (falta platforms)
-    p[0] = '[]' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- game_modes -------------------------
@@ -185,13 +221,13 @@ def p_game_modes(p):
 def p_resto_game_modes_1(p):
     '''resto_game_modes : COMMA game_modes resto_supported_languages'''
     # 26. resto_game_modes -> COMMA game_modes resto_supported_languages
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_game_modes_2(p):
     '''resto_game_modes : resto_supported_languages'''
     # 27. resto_game_modes -> resto_supported_languages   (falta game_modes)
-    p[0] = '[]' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- supported_languages -------------------------
@@ -205,13 +241,13 @@ def p_supported_languages(p):
 def p_resto_supported_languages_1(p):
     '''resto_supported_languages : COMMA supported_languages resto_age_rating'''
     # 29. resto_supported_languages -> COMMA supported_languages resto_age_rating
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_supported_languages_2(p):
     '''resto_supported_languages : resto_age_rating'''
     # 30. resto_supported_languages -> resto_age_rating   (falta supported_languages)
-    p[0] = '[]' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- age_rating -------------------------
@@ -225,13 +261,13 @@ def p_age_rating(p):
 def p_resto_age_rating_1(p):
     '''resto_age_rating : COMMA age_rating resto_critic_score'''
     # 32. resto_age_rating -> COMMA age_rating resto_critic_score
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = p[2] + ',' + p[3]
 
 
 def p_resto_age_rating_2(p):
     '''resto_age_rating : resto_critic_score'''
     # 33. resto_age_rating -> resto_critic_score   (falta age_rating)
-    p[0] = '' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 # ------------------------- critic_score -------------------------
@@ -251,33 +287,34 @@ def p_resto_critic_score_1(p):
 def p_resto_critic_score_2(p):
     '''resto_critic_score : '''
     # 36. resto_critic_score -> ε   (falta critic_score)
-    p[0] = ''
+    p[0] = 'null'
 
 
 # ------------------- objeto anidado developer_info -------------------
+# Se aplana en dos columnas: developer_info.studio, developer_info.country
 
 def p_objeto_dev_1(p):
     '''objeto_dev : LBRACE desde_studio RBRACE'''
     # 37. objeto_dev -> LBRACE desde_studio RBRACE
-    p[0] = '{' + p[2] + '}'
+    p[0] = p[2]
 
 
 def p_objeto_dev_2(p):
     '''objeto_dev : NULL'''
     # 38. objeto_dev -> NULL
-    p[0] = '{, }'
+    p[0] = 'null,null'
 
 
 def p_desde_studio_1(p):
     '''desde_studio : studio resto_country'''
     # 39. desde_studio -> studio resto_country
-    p[0] = p[1] + ', ' + p[2]
+    p[0] = p[1] + ',' + p[2]
 
 
 def p_desde_studio_2(p):
     '''desde_studio : desde_country'''
     # 40. desde_studio -> desde_country   (falta studio)
-    p[0] = '' + ', ' + p[1]
+    p[0] = 'null' + ',' + p[1]
 
 
 def p_desde_country_1(p):
@@ -289,7 +326,7 @@ def p_desde_country_1(p):
 def p_desde_country_2(p):
     '''desde_country : '''
     # 42. desde_country -> ε   (falta country)
-    p[0] = ''
+    p[0] = 'null'
 
 
 def p_resto_country_1(p):
@@ -301,7 +338,7 @@ def p_resto_country_1(p):
 def p_resto_country_2(p):
     '''resto_country : '''
     # 44. resto_country -> ε   (falta country)
-    p[0] = ''
+    p[0] = 'null'
 
 
 def p_studio(p):
@@ -317,59 +354,70 @@ def p_country(p):
 
 
 # ------------------------- listas -------------------------
+# Una lista se escribe como UN solo valor de la tabla: Indie;RPG;Accion
 
 def p_lista_1(p):
     '''lista : LBRACKET elementos RBRACKET'''
     # 47. lista -> LBRACKET elementos RBRACKET
-    p[0] = '[' + p[2] + ']'
+    p[0] = a_toon(p[2])
 
 
 def p_lista_2(p):
     '''lista : LBRACKET RBRACKET'''
-    # 48. lista -> LBRACKET RBRACKET   (arreglo vacío)
-    p[0] = '[]'
+    # 48. lista -> LBRACKET RBRACKET   (arreglo vacío -> cadena vacía)
+    p[0] = '""'
 
 
 def p_lista_3(p):
     '''lista : NULL'''
     # 49. lista -> NULL
-    p[0] = '[]'
+    p[0] = 'null'
 
 
 def p_elementos_1(p):
-    '''elementos : elementos COMMA valor'''
-    # 50. elementos -> elementos COMMA valor
-    p[0] = p[1] + ', ' + p[3]
+    '''elementos : elementos COMMA elemento'''
+    # 50. elementos -> elementos COMMA elemento
+    p[0] = p[1] + ';' + p[3]
 
 
 def p_elementos_2(p):
-    '''elementos : valor'''
-    # 51. elementos -> valor
+    '''elementos : elemento'''
+    # 51. elementos -> elemento
     p[0] = p[1]
+
+
+def p_elemento_1(p):
+    '''elemento : STRING
+                | NUMBER'''
+    # 52-53. elemento -> STRING | NUMBER   (texto tal cual; las comillas,
+    #        si hacen falta, se ponen a toda la lista en la regla 47)
+    p[0] = p[1]
+
+
+def p_elemento_2(p):
+    '''elemento : NULL'''
+    # 54. elemento -> NULL
+    p[0] = 'null'
 
 
 # ------------------------- valores -------------------------
 
 def p_valor_1(p):
     '''valor : STRING'''
-    # 52. valor -> STRING
-    # Si el texto trae coma (el delimitador de TOON) se pone entre comillas
-    if ',' in p[1]:
-        p[0] = '"' + p[1] + '"'
-    else:
-        p[0] = p[1]
+    # 55. valor -> STRING   (entre comillas solo si TOON lo necesita)
+    p[0] = a_toon(p[1])
 
 
 def p_valor_2(p):
     '''valor : NUMBER'''
-    # 53. valor -> NUMBER
+    # 56. valor -> NUMBER
     p[0] = p[1]
 
 
 def p_valor_3(p):
     '''valor : NULL'''
-    # 54. valor -> NULL   (se deja el espacio vacío)
-    p[0] = ''
+    # 57. valor -> NULL
+    p[0] = 'null'
 
 
 def p_error(p):
@@ -382,12 +430,11 @@ def p_error(p):
 
 parser = yacc.yacc()
 parser.errores = 0
-parser.ultimo_id = '?'
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         texto = leer_archivo(sys.argv[1])
-        salida = 'salida_toon.txt'
+        salida = sys.argv[2] if len(sys.argv) > 2 else 'salida_toon.toon'
 
         resultado = parser.parse(texto, lexer=lexer)
 
@@ -395,13 +442,10 @@ if __name__ == '__main__':
             print(f"\nEl archivo NO es válido: {lexer.errores} error(es) léxico(s), "
                   f"{parser.errores} error(es) de sintaxis. No se generó la salida.")
         else:
-            #Agregamos el registros encontrados porque esto se acerca mas a lo que es un formato toon
-            registros_encontrados = resultado.count(chr(10)) - 1
             with open(salida, 'w', encoding='utf-8') as f:
-                f.write(f'juegos[{registros_encontrados}]' + resultado)
+                f.write(resultado)
 
-            #print(resultado)
             # renglones TOON = renglones del resultado menos el encabezado
-            print(f"Registros TOON escritos: {registros_encontrados} -> {salida}")
+            print(f"Registros TOON escritos: {resultado.count(chr(10)) - 1} -> {salida}")
     else:
         print("Falta archivo de entrada")

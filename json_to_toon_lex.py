@@ -11,7 +11,7 @@ tokens = (
     'LBRACKET', 'RBRACKET',     # [ ]
     'LBRACE', 'RBRACE',         # { }
     'COLON', 'COMMA',           # : ,
-    # Llaves (keys) específicas del formato
+    # Llaves (keys) específicas del formato json que usamos
     'K_GAME_ID',
     'K_TITLE',
     'K_DESCRIPTION',
