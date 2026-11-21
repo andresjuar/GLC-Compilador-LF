@@ -6,45 +6,26 @@ from json_to_toon_lex import tokens, lexer, leer_archivo
 
 # ---------------------------------------------------------------
 # YACC: GLC del JSON de videojuegos -> formato plano tipo TOON
-#
-# Cada regla concatena su parte de la salida en p[0], igual que en
-# el validador de HTML. El renglón TOON se va formando desde las
-# hojas (valores) hasta la raíz (archivo).
-#
-# Los campos van en orden fijo. game_id es obligatorio (es la llave
-# del registro); los demás campos pueden faltar. Cuando un campo
-# falta, la regla "resto_X -> resto_Y" deja su espacio vacío.
-#
-# resto_X = los campos desde X hasta critic_score, donde cada campo
-#           presente va precedido de COMMA (como en el JSON).
 # ---------------------------------------------------------------
 
 start = 'archivo'   # símbolo inicial
 
-
-def aviso(texto):
-    """Mensaje de validación (no modifica la salida)."""
-    print(f"  Aviso [{parser.ultimo_id}]: {texto}")
-
-
-# ------------------------- Estructura -------------------------
-
 def p_archivo_1(p):
     '''archivo : LBRACKET registros RBRACKET'''
     # 1. archivo -> LBRACKET registros RBRACKET
-    p[0] = ('game_id, title, description, release_date, '
+    p[0] = ('{' +  'game_id, title, description, release_date, '
             'developer_info{studio, country}, genres[], platforms[], '
             'game_modes[], supported_languages[], age_rating, critic_score'
-            + '\n' + p[2] + '\n')
+             + '}:' + '\n' + p[2] + '\n')
 
-
+#para archivos vacíos [] este caso nunca entraría en la tarea porque es mínimo 20 registros, pero para completar las reglas
 def p_archivo_2(p):
     '''archivo : LBRACKET RBRACKET'''
     # 2. archivo -> LBRACKET RBRACKET   (arreglo vacío: solo encabezado)
-    p[0] = ('game_id, title, description, release_date, '
+    p[0] =  ('{' + 'game_id, title, description, release_date, '
             'developer_info{studio, country}, genres[], platforms[], '
             'game_modes[], supported_languages[], age_rating, critic_score'
-            + '\n')
+           + '}' + '\n') 
 
 
 def p_registros_1(p):
@@ -62,7 +43,7 @@ def p_registros_2(p):
 def p_registro(p):
     '''registro : LBRACE game_id resto_title RBRACE'''
     # 5. registro -> LBRACE game_id resto_title RBRACE
-    p[0] = p[2] + ', ' + p[3]
+    p[0] = '  ' + p[2] + ', ' + p[3]
 
 
 # ------------------------- game_id -------------------------
@@ -70,9 +51,6 @@ def p_registro(p):
 def p_game_id(p):
     '''game_id : K_GAME_ID COLON valor'''
     # 6. game_id -> K_GAME_ID COLON valor
-    parser.ultimo_id = p[3]          # solo para identificar los avisos
-    if p[3] == '':
-        aviso("'game_id' está vacío")
     p[0] = p[3]
 
 
@@ -81,8 +59,6 @@ def p_game_id(p):
 def p_title(p):
     '''title : K_TITLE COLON valor'''
     # 7. title -> K_TITLE COLON valor
-    if p[3] == '':
-        aviso("'title' está vacío")
     p[0] = p[3]
 
 
@@ -95,7 +71,6 @@ def p_resto_title_1(p):
 def p_resto_title_2(p):
     '''resto_title : resto_description'''
     # 9. resto_title -> resto_description   (falta title)
-    aviso("falta la llave 'title'")
     p[0] = '' + ', ' + p[1]
 
 
@@ -104,8 +79,6 @@ def p_resto_title_2(p):
 def p_description(p):
     '''description : K_DESCRIPTION COLON valor'''
     # 10. description -> K_DESCRIPTION COLON valor
-    if p[3] == '':
-        aviso("'description' está vacío")
     p[0] = p[3]
 
 
@@ -118,7 +91,6 @@ def p_resto_description_1(p):
 def p_resto_description_2(p):
     '''resto_description : resto_release_date'''
     # 12. resto_description -> resto_release_date   (falta description)
-    aviso("falta la llave 'description'")
     p[0] = '' + ', ' + p[1]
 
 
@@ -127,8 +99,6 @@ def p_resto_description_2(p):
 def p_release_date(p):
     '''release_date : K_RELEASE_DATE COLON valor'''
     # 13. release_date -> K_RELEASE_DATE COLON valor
-    if p[3] == '':
-        aviso("'release_date' está vacío")
     p[0] = p[3]
 
 
@@ -141,7 +111,6 @@ def p_resto_release_date_1(p):
 def p_resto_release_date_2(p):
     '''resto_release_date : resto_developer_info'''
     # 15. resto_release_date -> resto_developer_info   (falta release_date)
-    aviso("falta la llave 'release_date'")
     p[0] = '' + ', ' + p[1]
 
 
@@ -162,7 +131,6 @@ def p_resto_developer_info_1(p):
 def p_resto_developer_info_2(p):
     '''resto_developer_info : resto_genres'''
     # 18. resto_developer_info -> resto_genres   (falta developer_info)
-    aviso("falta la llave 'developer_info'")
     p[0] = '{, }' + ', ' + p[1]
 
 
@@ -171,8 +139,6 @@ def p_resto_developer_info_2(p):
 def p_genres(p):
     '''genres : K_GENRES COLON lista'''
     # 19. genres -> K_GENRES COLON lista
-    if p[3] == '[]':
-        aviso("'genres' es una lista vacía")
     p[0] = p[3]
 
 
@@ -185,7 +151,6 @@ def p_resto_genres_1(p):
 def p_resto_genres_2(p):
     '''resto_genres : resto_platforms'''
     # 21. resto_genres -> resto_platforms   (falta genres)
-    aviso("falta la llave 'genres'")
     p[0] = '[]' + ', ' + p[1]
 
 
@@ -194,8 +159,6 @@ def p_resto_genres_2(p):
 def p_platforms(p):
     '''platforms : K_PLATFORMS COLON lista'''
     # 22. platforms -> K_PLATFORMS COLON lista
-    if p[3] == '[]':
-        aviso("'platforms' es una lista vacía")
     p[0] = p[3]
 
 
@@ -208,7 +171,6 @@ def p_resto_platforms_1(p):
 def p_resto_platforms_2(p):
     '''resto_platforms : resto_game_modes'''
     # 24. resto_platforms -> resto_game_modes   (falta platforms)
-    aviso("falta la llave 'platforms'")
     p[0] = '[]' + ', ' + p[1]
 
 
@@ -217,8 +179,6 @@ def p_resto_platforms_2(p):
 def p_game_modes(p):
     '''game_modes : K_GAME_MODES COLON lista'''
     # 25. game_modes -> K_GAME_MODES COLON lista
-    if p[3] == '[]':
-        aviso("'game_modes' es una lista vacía")
     p[0] = p[3]
 
 
@@ -231,7 +191,6 @@ def p_resto_game_modes_1(p):
 def p_resto_game_modes_2(p):
     '''resto_game_modes : resto_supported_languages'''
     # 27. resto_game_modes -> resto_supported_languages   (falta game_modes)
-    aviso("falta la llave 'game_modes'")
     p[0] = '[]' + ', ' + p[1]
 
 
@@ -240,8 +199,6 @@ def p_resto_game_modes_2(p):
 def p_supported_languages(p):
     '''supported_languages : K_SUPPORTED_LANGUAGES COLON lista'''
     # 28. supported_languages -> K_SUPPORTED_LANGUAGES COLON lista
-    if p[3] == '[]':
-        aviso("'supported_languages' es una lista vacía")
     p[0] = p[3]
 
 
@@ -254,7 +211,6 @@ def p_resto_supported_languages_1(p):
 def p_resto_supported_languages_2(p):
     '''resto_supported_languages : resto_age_rating'''
     # 30. resto_supported_languages -> resto_age_rating   (falta supported_languages)
-    aviso("falta la llave 'supported_languages'")
     p[0] = '[]' + ', ' + p[1]
 
 
@@ -263,8 +219,6 @@ def p_resto_supported_languages_2(p):
 def p_age_rating(p):
     '''age_rating : K_AGE_RATING COLON valor'''
     # 31. age_rating -> K_AGE_RATING COLON valor
-    if p[3] == '':
-        aviso("'age_rating' está vacío")
     p[0] = p[3]
 
 
@@ -277,7 +231,6 @@ def p_resto_age_rating_1(p):
 def p_resto_age_rating_2(p):
     '''resto_age_rating : resto_critic_score'''
     # 33. resto_age_rating -> resto_critic_score   (falta age_rating)
-    aviso("falta la llave 'age_rating'")
     p[0] = '' + ', ' + p[1]
 
 
@@ -286,8 +239,6 @@ def p_resto_age_rating_2(p):
 def p_critic_score(p):
     '''critic_score : K_CRITIC_SCORE COLON valor'''
     # 34. critic_score -> K_CRITIC_SCORE COLON valor
-    if p[3] == '':
-        aviso("'critic_score' está vacío")
     p[0] = p[3]
 
 
@@ -300,7 +251,6 @@ def p_resto_critic_score_1(p):
 def p_resto_critic_score_2(p):
     '''resto_critic_score : '''
     # 36. resto_critic_score -> ε   (falta critic_score)
-    aviso("falta la llave 'critic_score'")
     p[0] = ''
 
 
@@ -315,7 +265,6 @@ def p_objeto_dev_1(p):
 def p_objeto_dev_2(p):
     '''objeto_dev : NULL'''
     # 38. objeto_dev -> NULL
-    aviso("'developer_info' es null")
     p[0] = '{, }'
 
 
@@ -328,7 +277,6 @@ def p_desde_studio_1(p):
 def p_desde_studio_2(p):
     '''desde_studio : desde_country'''
     # 40. desde_studio -> desde_country   (falta studio)
-    aviso("falta la llave 'developer_info.studio'")
     p[0] = '' + ', ' + p[1]
 
 
@@ -341,7 +289,6 @@ def p_desde_country_1(p):
 def p_desde_country_2(p):
     '''desde_country : '''
     # 42. desde_country -> ε   (falta country)
-    aviso("falta la llave 'developer_info.country'")
     p[0] = ''
 
 
@@ -354,23 +301,18 @@ def p_resto_country_1(p):
 def p_resto_country_2(p):
     '''resto_country : '''
     # 44. resto_country -> ε   (falta country)
-    aviso("falta la llave 'developer_info.country'")
     p[0] = ''
 
 
 def p_studio(p):
     '''studio : K_STUDIO COLON valor'''
     # 45. studio -> K_STUDIO COLON valor
-    if p[3] == '':
-        aviso("'developer_info.studio' está vacío")
     p[0] = p[3]
 
 
 def p_country(p):
     '''country : K_COUNTRY COLON valor'''
     # 46. country -> K_COUNTRY COLON valor
-    if p[3] == '':
-        aviso("'developer_info.country' está vacío")
     p[0] = p[3]
 
 
@@ -445,21 +387,21 @@ parser.ultimo_id = '?'
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         texto = leer_archivo(sys.argv[1])
-        salida = sys.argv[2] if len(sys.argv) > 2 else 'salida_toon.txt'
+        salida = 'salida_toon.txt'
 
-        print("Validación de estructura:")
         resultado = parser.parse(texto, lexer=lexer)
 
         if lexer.errores or parser.errores or resultado is None:
             print(f"\nEl archivo NO es válido: {lexer.errores} error(es) léxico(s), "
                   f"{parser.errores} error(es) de sintaxis. No se generó la salida.")
         else:
+            #Agregamos el registros encontrados porque esto se acerca mas a lo que es un formato toon
+            registros_encontrados = resultado.count(chr(10)) - 1
             with open(salida, 'w', encoding='utf-8') as f:
-                f.write(resultado)
+                f.write(f'juegos[{registros_encontrados}]' + resultado)
 
-            print()
-            print(resultado)
+            #print(resultado)
             # renglones TOON = renglones del resultado menos el encabezado
-            print(f"Registros TOON escritos: {resultado.count(chr(10)) - 1} -> {salida}")
+            print(f"Registros TOON escritos: {registros_encontrados} -> {salida}")
     else:
-        print("Falta archivo de ENTRADA")
+        print("Falta archivo de entrada")
