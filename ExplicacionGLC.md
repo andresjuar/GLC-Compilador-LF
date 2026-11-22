@@ -24,12 +24,16 @@ La gramática acepta json con este formato:
 
 Para esto, hicimos dos versiones, uno que tiene una salida "toon-like" que es como lo pide la actividad del proyecto, con una línea por registro
 
+eso se puede ver en el archivo `json_to_toon_like_yacc.py`
+
 ```
 juegos[484]{game_id,title,description,release_date,developer_info.studio,developer_info.country,genres,platforms,game_modes,supported_languages,age_rating,critic_score}:
   SV-2016-001,Stardew Valley,"Juego de granja, simulacion y rol.",2016-02-26,ConcernedApe,Estados Unidos,Simulacion;RPG;Indie,PC;Nintendo Switch;PS4;Xbox One,Un jugador;Multijugador en linea,Espanol;Ingles;Frances,E10+,89
 ```
 
 También desarrollamos la versión que utiliza las reglas oficiales de toon, el resultado de ese mismo json es este:
+
+esto está en el archivo `json_to_toon_yacc.py`
 
 ```
 juegos[484]:
