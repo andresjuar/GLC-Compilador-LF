@@ -32,8 +32,8 @@ from json_to_toon_lex import tokens, lexer, leer_archivo
 #  - Se ponen comillas cuando el texto podría confundirse (ver a_toon).
 # ---------------------------------------------------------------
 
-start = 'archivo'   # símbolo inicial
 
+# ---------------------- Funciones Auxiliares -------------------------
 
 def a_toon(texto):
     """Esta función es para hacer escribir el texto como un valor de toon:
@@ -66,6 +66,8 @@ def contar_elementos(texto):
 
 
 # ------------------------- Estructura -------------------------
+
+start = 'archivo'   # símbolo inicial
 
 def p_archivo_1(p):
     '''archivo : LBRACKET registros RBRACKET'''
