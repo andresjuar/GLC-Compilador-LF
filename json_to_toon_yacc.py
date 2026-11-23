@@ -463,7 +463,7 @@ parser.errores = 0
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         texto = leer_archivo(sys.argv[1])
-        salida = sys.argv[2] if len(sys.argv) > 2 else 'salida_toon.toon'
+        salida = 'salida_toon.toon'
 
         resultado = parser.parse(texto, lexer=lexer)
 

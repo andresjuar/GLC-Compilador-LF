@@ -27,7 +27,7 @@ Para esto, hicimos dos versiones, uno que tiene una salida "toon-like" que es co
 eso se puede ver en el archivo `json_to_toon_like_yacc.py`
 
 ```
-juegos[484]{game_id,title,description,release_date,developer_info.studio,developer_info.country,genres,platforms,game_modes,supported_languages,age_rating,critic_score}:
+juegos[1]{game_id,title,description,release_date,developer_info.studio,developer_info.country,genres,platforms,game_modes,supported_languages,age_rating,critic_score}:
   SV-2016-001,Stardew Valley,"Juego de granja, simulacion y rol.",2016-02-26,ConcernedApe,Estados Unidos,Simulacion;RPG;Indie,PC;Nintendo Switch;PS4;Xbox One,Un jugador;Multijugador en linea,Espanol;Ingles;Frances,E10+,89
 ```
 
@@ -36,7 +36,7 @@ También desarrollamos la versión que utiliza las reglas oficiales de toon, el 
 esto está en el archivo `json_to_toon_yacc.py`
 
 ```
-juegos[484]:
+juegos[1]:
   - game_id: SV-2016-001
     title: Stardew Valley
     description: "Juego de granja, simulacion y rol."
@@ -71,14 +71,13 @@ STRING, NUMBER, NULL }
 
 **S** (símbolo inicial) = archivo
 
-**P** (producciones). La numeración es la misma que usa PLY en `parser.out`.
+**P** (Reglas de Producción) también se muestra como se mapea en el parser
 
 | #  | Producción | p[0] |
 |----|------------|------|
 | 1  | archivo → LBRACKET registros RBRACKET | `'juegos[' + N + ']:' + '\n' + p[2] + '\n'` |
 | 2  | archivo → LBRACKET RBRACKET | `'juegos[0]:' + '\n'` |
-| 3  | registros → registros COMMA registro | `p[1] + '
-' + p[3]` |
+| 3  | registros → registros COMMA registro | `p[1] + '' + p[3]` |
 | 4  | registros → registro | `p[1]` |
 | 5  | registro → LBRACE game_id resto_title RBRACE | `'  - ' + p[2] + p[3]` |
 | 6  | game_id → K_GAME_ID COLON valor | `'game_id: ' + p[3]` |

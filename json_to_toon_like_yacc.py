@@ -395,7 +395,7 @@ if __name__ == '__main__':
             print(f"\nEl archivo NO es válido: {lexer.errores} error(es) léxico(s), "
                   f"{parser.errores} error(es) de sintaxis. No se generó la salida.")
         else:
-            #Agregamos el registros encontrados porque esto se acerca mas a lo que es un formato toon
+            #Agregamos el número de registros encontrados porque esto se acerca mas a lo que es un formato toon
             registros_encontrados = resultado.count(chr(10)) - 1
             with open(salida, 'w', encoding='utf-8') as f:
                 f.write(f'juegos[{registros_encontrados}]' + resultado)

@@ -1,3 +1,6 @@
 __pycache__/
 parsetab.py
 parser.out
+parsetab_*.py
+parser_*.out
+poster/
